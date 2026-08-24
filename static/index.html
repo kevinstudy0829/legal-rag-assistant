@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>刑法查詢助手</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --bg-elevated: #ffffff;
+    --text: #1c1b1a;
+    --text-muted: #6b6862;
+    --border: #e2ded5;
+    --accent: #7a5c3e;
+    --accent-strong: #5c4429;
+    --accent-soft: #efe6d8;
+    --danger-bg: #fbeee9;
+    --danger-border: #e8c9ba;
+    --danger-text: #8a4a2a;
+    --chip-bg: #f0ede6;
+    --shadow: 0 1px 2px rgba(28, 27, 26, 0.04), 0 8px 24px rgba(28, 27, 26, 0.06);
+    --radius: 14px;
+    --font-serif: "Noto Serif TC", "PMingLiU", serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17160f;
+      --bg-elevated: #211f18;
+      --text: #efe9dc;
+      --text-muted: #a39a89;
+      --border: #3a362b;
+      --accent: #d8b27c;
+      --accent-strong: #ecd0a0;
+      --accent-soft: #2c2719;
+      --danger-bg: #2c1c15;
+      --danger-border: #4a2f20;
+      --danger-text: #e2a487;
+      --chip-bg: #26241b;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header .badge {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: 0.02em;
+  }
+
+  header p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+
+  .input-card {
+    margin-bottom: 20px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  textarea::placeholder { color: var(--text-muted); }
+
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hint {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  button#askBtn {
+    background: var(--accent-strong);
+    color: var(--bg-elevated);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+    white-space: nowrap;
+  }
+
+  button#askBtn:hover { opacity: 0.88; }
+  button#askBtn:active { transform: translateY(1px); }
+  button#askBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 0;
+  }
+
+  .example-chip {
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--chip-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent);
+  }
+
+  #status {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 4px 0 20px;
+    padding: 0 4px;
+  }
+
+  .spinner {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #errorBox {
+    display: none;
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-text);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  #result { display: none; }
+
+  .answer-card {
+    margin-bottom: 18px;
+  }
+
+  .answer-body {
+    font-size: 15.5px;
+  }
+
+  .stream-cursor {
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    background: var(--accent);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.9s step-start infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .answer-body h3 {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    margin: 20px 0 8px;
+    color: var(--accent-strong);
+  }
+  .answer-body h3:first-child { margin-top: 0; }
+
+  .answer-body strong { color: var(--accent-strong); }
+
+  .answer-body p { margin: 0 0 12px; }
+
+  .answer-body ul, .answer-body ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+  .answer-body li { margin-bottom: 4px; }
+
+  .answer-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+
+  .disclaimer {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 4px;
+  }
+  .disclaimer strong { color: var(--accent-strong); }
+
+  .sources-card h2 {
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    text-transform: uppercase;
+  }
+
+  .source-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .source-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .source-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .source-article {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .source-chapter {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .source-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .source-score {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    background: var(--chip-bg);
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+
+  .source-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .source-link:hover { text-decoration: underline; }
+
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 32px 14px 60px; }
+    h1 { font-size: 23px; }
+    .input-footer { flex-direction: column; align-items: stretch; }
+    button#askBtn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="badge">RAG · 中華民國刑法</span>
+    <h1>刑法查詢助手</h1>
+    <p>描述一段行為，系統會檢索相關刑法條文並分析可能觸犯的罪名。</p>
+  </header>
+
+  <div class="card input-card">
+    <textarea id="questionInput" placeholder="請描述您想詢問的行為或情境，例如：我朋友欠我錢不還，我趁他不注意把他放在桌上的手機拿走抵債，這樣算什麼罪？" maxlength="2000"></textarea>
+    <div class="input-footer">
+      <span class="hint">Ctrl / ⌘ + Enter 送出</span>
+      <button id="askBtn">送出查詢</button>
+    </div>
+    <div class="examples" id="examples"></div>
+  </div>
+
+  <div id="status">
+    <span class="spinner"></span>
+    <span>分析中，正在檢索相關條文並生成回答，通常需要 30~90 秒，請耐心等候，不要重新整理頁面…</span>
+  </div>
+
+  <div id="errorBox"></div>
+
+  <div id="result">
+    <div class="card answer-card">
+      <div class="answer-body" id="answerBody"></div>
+    </div>
+    <div class="card sources-card" id="sourcesCard" style="display:none;">
+      <h2>參考條文來源</h2>
+      <div id="sourcesList"></div>
+    </div>
+  </div>
+
+  <footer>本工具僅供輔助參考，不構成正式法律意見，也不能取代律師之個案諮詢。</footer>
+</div>
+
+<script>
+  const EXAMPLES = [
+    "我朋友欠我錢不還，我趁他不注意把他放在桌上的手機拿走抵債，這樣算什麼罪？",
+    "我拿刀威脅便利商店店員交出收銀機裡的錢",
+    "我朋友被人酒駕開車撞傷，對方肇事逃逸，對方犯了啥罪？",
+    "什麼是正當防衛？"
+  ];
+
+  const questionInput = document.getElementById("questionInput");
+  const askBtn = document.getElementById("askBtn");
+  const statusEl = document.getElementById("status");
+  const errorBox = document.getElementById("errorBox");
+  const resultEl = document.getElementById("result");
+  const answerBody = document.getElementById("answerBody");
+  const sourcesCard = document.getElementById("sourcesCard");
+  const sourcesList = document.getElementById("sourcesList");
+  const examplesEl = document.getElementById("examples");
+
+  EXAMPLES.forEach((ex) => {
+    const chip = document.createElement("span");
+    chip.className = "example-chip";
+    chip.textContent = ex.length > 24 ? ex.slice(0, 24) + "…" : ex;
+    chip.title = ex;
+    chip.addEventListener("click", () => {
+      questionInput.value = ex;
+      questionInput.focus();
+    });
+    examplesEl.appendChild(chip);
+  });
+
+  // 極簡 Markdown 轉 HTML：只處理這個專案回答裡實際會出現的語法
+  // （### 標題、**粗體**、清單、水平線、段落），避免引入外部套件。
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function inlineMd(s) {
+    return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  }
+
+  function markdownToHtml(md) {
+    const lines = md.replace(/\r\n/g, "\n").split("\n");
+    let html = "";
+    let listOpen = false;
+    let paraBuf = [];
+
+    function flushPara() {
+      if (paraBuf.length) {
+        html += "<p>" + paraBuf.join("<br>") + "</p>";
+        paraBuf = [];
+      }
+    }
+    function closeList() {
+      if (listOpen) { html += "</ul>"; listOpen = false; }
+    }
+
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (line === "") { flushPara(); closeList(); continue; }
+      if (/^---+$/.test(line)) { flushPara(); closeList(); html += "<hr>"; continue; }
+      const h = line.match(/^#{1,6}\s+(.*)$/);
+      if (h) { flushPara(); closeList(); html += `<h3>${inlineMd(h[1])}</h3>`; continue; }
+      const li = line.match(/^[-*]\s+(.*)$/) || line.match(/^\d+\.\s+(.*)$/);
+      if (li) {
+        flushPara();
+        if (!listOpen) { html += "<ul>"; listOpen = true; }
+        html += `<li>${inlineMd(li[1])}</li>`;
+        continue;
+      }
+      closeList();
+      paraBuf.push(inlineMd(line));
+    }
+    flushPara();
+    closeList();
+    return html;
+  }
+
+  function renderAnswer(mainText, { streaming = false } = {}) {
+    // 免責聲明是後端在生成結束後另外用獨立事件（disclaimer）送過來的，
+    // 這裡只負責渲染 Gemini 逐字串流回來的主文字內容。
+    answerBody.innerHTML = markdownToHtml(mainText);
+    if (streaming) {
+      const cursor = document.createElement("span");
+      cursor.className = "stream-cursor";
+      answerBody.appendChild(cursor);
+    }
+  }
+
+  function appendDisclaimer(disclaimerText) {
+    const div = document.createElement("div");
+    div.className = "disclaimer";
+    div.innerHTML = inlineMd(disclaimerText.trim());
+    answerBody.appendChild(div);
+  }
+
+  function renderSources(sources) {
+    if (!sources || sources.length === 0) {
+      sourcesCard.style.display = "none";
+      return;
+    }
+    sourcesCard.style.display = "block";
+    sourcesList.innerHTML = "";
+    sources.forEach((s) => {
+      const item = document.createElement("div");
+      item.className = "source-item";
+      item.innerHTML = `
+        <div class="source-main">
+          <span class="source-article">${escapeHtml(s.law_name)} ${escapeHtml(s.article_no)}</span>
+          <span class="source-chapter">${escapeHtml(s.chapter_path || "")}</span>
+        </div>
+        <div class="source-right">
+          <span class="source-score">相關度 ${s.score.toFixed(3)}</span>
+          ${s.source_url ? `<a class="source-link" href="${escapeHtml(s.source_url)}" target="_blank" rel="noopener">來源</a>` : ""}
+        </div>
+      `;
+      sourcesList.appendChild(item);
+    });
+  }
+
+  async function ask() {
+    const question = questionInput.value.trim();
+    if (!question) {
+      questionInput.focus();
+      return;
+    }
+
+    askBtn.disabled = true;
+    statusEl.style.display = "flex";
+    errorBox.style.display = "none";
+    resultEl.style.display = "none";
+    sourcesCard.style.display = "none";
+    answerBody.innerHTML = "";
+
+    let accumulatedText = "";
+    let gotAnyDelta = false;
+
+    // /ask 是 NDJSON streaming：一行一個 JSON 事件。
+    //   sources    —— 檢索完成，附上這次引用的參考條文（先顯示，Gemini 還在生成中）
+    //   delta      —— Gemini 逐字生成的文字片段，累加後即時重繪
+    //   disclaimer —— 強制附加的免責聲明（獨立事件，不是 Gemini 生成的一部分）
+    //   error      —— 錯誤訊息
+    // 空行是心跳（檢索/reranker 階段撐連線用），直接忽略即可。
+    function handleEvent(evt) {
+      if (evt.type === "sources") {
+        renderSources(evt.sources || []);
+        resultEl.style.display = "block";
+      } else if (evt.type === "delta") {
+        gotAnyDelta = true;
+        accumulatedText += evt.text || "";
+        resultEl.style.display = "block";
+        statusEl.style.display = "none";
+        renderAnswer(accumulatedText, { streaming: true });
+      } else if (evt.type === "disclaimer") {
+        renderAnswer(accumulatedText, { streaming: false });
+        appendDisclaimer(evt.text || "");
+      } else if (evt.type === "error") {
+        throw new Error(evt.detail || "查詢過程發生錯誤");
+      }
+    }
+
+    try {
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!res.ok) {
+        // 非 200（例如 400 缺參數、429/503 被 nginx 擋掉）走一般 JSON 錯誤格式
+        const data = await res.json().catch(() => null);
+        const detail = (data && data.detail) ? data.detail : `伺服器回應錯誤（HTTP ${res.status}）`;
+        throw new Error(detail);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim();
+          buffer = buffer.slice(newlineIndex + 1);
+          if (!line) continue; // 心跳空行
+          let evt;
+          try {
+            evt = JSON.parse(line);
+          } catch {
+            continue; // 解析失敗的行直接跳過，不中斷整個串流
+          }
+          handleEvent(evt);
+        }
+      }
+
+      // 理論上每個事件後端都會補上換行，但保險起見處理一下沒有結尾換行的殘留內容
+      const tail = buffer.trim();
+      if (tail) {
+        try {
+          handleEvent(JSON.parse(tail));
+        } catch {
+          /* 忽略無法解析的殘留內容 */
+        }
+      }
+
+      if (!gotAnyDelta) {
+        throw new Error("伺服器沒有回傳任何內容，請稍後再試一次");
+      }
+    } catch (err) {
+      errorBox.textContent = "查詢失敗：" + (err.message || String(err)) +
+        "（請確認 uvicorn api:app 是否正在執行、資料庫是否已啟動）";
+      errorBox.style.display = "block";
+    } finally {
+      askBtn.disabled = false;
+      statusEl.style.display = "none";
+    }
+  }
+
+  askBtn.addEventListener("click", ask);
+  questionInput.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") ask();
+  });
+</script>
+</body>
+</html>

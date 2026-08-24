@@ -1,0 +1,10 @@
+env/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.env
+data/law_bulk_raw.xml
+data/criminal_code.json
+.DS_Store

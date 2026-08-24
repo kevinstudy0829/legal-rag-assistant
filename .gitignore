@@ -1,0 +1,41 @@
+# --- 機密資訊 ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# --- 虛擬環境 ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- 離線資料前處理產生的檔案（會依 fetch_law.py 重新產生，不需要進版控）---
+data/law_bulk_raw.xml
+data/criminal_code.json
+
+# --- IDE / 編輯器 ---
+.vscode/
+.idea/
+*.swp
+
+# --- Claude Code 本機專案設定（session 資料，因人因機而異）---
+.claude/
+
+# --- 作業系統 ---
+.DS_Store
+Thumbs.db
+
+# --- 雜項 log ---
+*.log

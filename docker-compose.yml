@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: legal_rag_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: legal_rag
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - legal_rag_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: legal_rag_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # 其餘設定（GEMINI_API_KEY、模型名稱、檢索參數等）都從 .env 讀取；
+    # DATABASE_URL 在這裡覆蓋，因為在 docker compose 的內部網路裡，
+    # api 容器要用服務名稱「db」連資料庫，不是 .env 裡給本機開發用的 localhost。
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/legal_rag
+    ports:
+      # 只綁本機 127.0.0.1，不直接對外開放；對外服務走 nginx 反向代理轉發到這裡
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # BGE-M3 / reranker 模型快取，避免每次重建 container 都要重新下載
+      - hf_cache:/root/.cache/huggingface
+
+volumes:
+  legal_rag_pgdata:
+  hf_cache:
